@@ -13,4 +13,6 @@ variable "public_subnet_cidrs" {
 variable "private_app_subnet_cidrs" {
   type = list(string)
 }
-
+variable "common_tags" {
+  type = map(string)
+}

@@ -24,9 +24,15 @@ resource "aws_subnet" "public" {
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
 
-  tags = {
+tags = merge(
+  var.common_tags,
+  {
     Name = "${var.project_name}-public-${count.index + 1}"
+
+    "kubernetes.io/role/elb" = "1"
+    "kubernetes.io/cluster/eks-zero-trust" = "shared"
   }
+)
 }
 
 // Private Subnet
@@ -38,9 +44,15 @@ resource "aws_subnet" "private_app" {
   cidr_block        = var.private_app_subnet_cidrs[count.index]
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
-  tags = {
+tags = merge(
+  var.common_tags,
+  {
     Name = "${var.project_name}-private-app-${count.index + 1}"
+
+    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/cluster/eks-zero-trust" = "shared"
   }
+)
 }
 
 
