@@ -3,3 +3,21 @@
 *.tfstate
 *.tfstate.*
 .terraform.lock.hcl
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Sensitive files
+*.tfvars
+*.tfvars.json
+
+# CLI configs
+.terraform.lock.hcl
+
+# OS files
+.DS_Store
+
+# Node (just in case)
+node_modules/
