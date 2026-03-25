@@ -12,3 +12,18 @@ metadata:
          port: 3000
          targetPort: 3000
          nodePort: 30007
+=======
+
+metadata:
+  name: zero-trust-service
+
+spec:
+  type: LoadBalancer    ### Removed Node port Added LB AWS creates LB automatically Public access
+
+  selector:
+    app: zero-trust-app
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
