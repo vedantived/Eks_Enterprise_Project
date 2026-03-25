@@ -17,6 +17,9 @@ module "vpc_flow_logs" {
   common_tags  = var.common_tags
 }
 
+data "http" "my_ip" {
+  url = "https://checkip.amazonaws.com"   #### To check the our laptop ip dyanamically.. 
+}     
 # EKS Module 
 
 module "eks" {
@@ -31,7 +34,9 @@ module "eks" {
     module.vpc.public_subnet_ids
   )
 
-  allowed_cidrs = ["YOUR_IP/32"]
+    allowed_cidrs = [
+    "${chomp(data.http.my_ip.response_body)}/32"     ### Thhis Line fecth the our laptop ip dyanamically  chomp() cleans API output before using it  
+  ]
 
   cluster_role_policy_attachment = aws_iam_role_policy_attachment.eks_cluster_policy
 
