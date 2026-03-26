@@ -8,15 +8,15 @@ resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
 resource "aws_iam_role" "vpc_flow_logs_role" {
   name = "${var.project_name}-vpc-flow-logs-role"
 
-  assume_role_policy = jsonencode({
+  assume_role_policy = jsonencode({                                  //Converts Terraform → JSON format (required by AWS)
     Version = "2012-10-17"
     Statement = [
       {
         Effect = "Allow"
         Principal = {
-          Service = "vpc-flow-logs.amazonaws.com"
+          Service = "vpc-flow-logs.amazonaws.com"                  //princpal means - Who can use this role - Only VPC Flow Logs service can use 
         }
-        Action = "sts:AssumeRole"
+        Action = "sts:AssumeRole"                                  //Allows service to take this role temporarily
       }
     ]
   })
