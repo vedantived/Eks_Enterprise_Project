@@ -25,5 +25,5 @@ spec:
 
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 3000
+      port: 80              //Port exposed by service
+      targetPort: 3000            //Port inside container (your Node.js app)
