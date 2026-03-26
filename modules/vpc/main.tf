@@ -29,8 +29,8 @@ tags = merge(
   {
     Name = "${var.project_name}-public-${count.index + 1}"
 
-    "kubernetes.io/role/elb" = "1"
-    "kubernetes.io/cluster/eks-zero-trust" = "shared"
+    "kubernetes.io/role/elb" = "1"                         //Used by Kubernetes → creates public load balancer
+    "kubernetes.io/cluster/eks-zero-trust" = "shared"         //Links subnet to EKS cluster
   }
 )
 }
@@ -86,7 +86,7 @@ resource "aws_nat_gateway" "nat" {
     Name = "${var.project_name}-nat"
   }
 
-  depends_on = [aws_internet_gateway.igw]
+  depends_on = [aws_internet_gateway.igw]        //Ensure IGW created first
 }
 
 // Public Route Table
