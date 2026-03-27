@@ -46,6 +46,7 @@ module "eks" {
   }
 }
 
+
 ##### EKS Cluster role 
 
 resource "aws_iam_role" "eks_cluster_role" {
@@ -65,6 +66,26 @@ resource "aws_iam_role" "eks_cluster_role" {
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}
+
+############# Enable OIDC Provider (EKS → IAM connection)
+
+data "aws_eks_cluster" "this" {
+  name = module.eks.cluster_name
+}
+
+data "aws_eks_cluster_auth" "this" {                  ##Authentication Token - Connecting Terraform to Kubernetes cluster
+  name = module.eks.cluster_name
+}
+
+data "tls_certificate" "eks" {                                                   ##Fetch TLS Certificate of OIDC URL
+  url = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks_oidc" {                                   ##Create OIDC Provider in IAM
+  url             = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
 }
 
 #### SSM Role for each ec2 standardize and reuse it across all resources
