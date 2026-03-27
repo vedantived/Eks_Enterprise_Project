@@ -41,3 +41,15 @@ variable "max_size" {
 variable "common_tags" {
   type = map(string)
 }
+
+variable "namespace" {
+  description = "Kubernetes namespace"
+  type        = string
+  default     = "default"
+}
+
+variable "service_account_name" {
+  description = "Kubernetes service account name"
+  type        = string
+  default     = "irsa-sa"
+}
