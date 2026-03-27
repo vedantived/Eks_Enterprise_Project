@@ -88,6 +88,43 @@ resource "aws_iam_openid_connect_provider" "eks_oidc" {                         
   thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
 }
 
+####### Create IAM Policy (creae s3 bucket) - IAM policy created with permission 
+
+resource "aws_s3_bucket" "irsa_bucket" {
+  bucket = "my-irsa-demo-bucket-${random_id.suffix.hex}"
+
+  tags = {
+    Name        = "irsa-demo-bucket"
+    Environment = "dev"
+  }
+}
+
+resource "aws_iam_policy" "irsa_s3_policy" {
+  name = "irsa-s3-read-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = aws_s3_bucket.irsa_bucket.arn
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = "${aws_s3_bucket.irsa_bucket.arn}/*"
+      }
+    ]
+  })
+}}
+
 #### SSM Role for each ec2 standardize and reuse it across all resources
 
 resource "aws_iam_role" "ssm_role" {
