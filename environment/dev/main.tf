@@ -125,6 +125,38 @@ resource "aws_iam_policy" "irsa_s3_policy" {
   })
 }}
 
+#####Create IAM Role (Trust with OIDC + ServiceAccount)
+
+resource "aws_iam_role" "irsa_role" {
+  name = "irsa-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.eks_oidc.arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${local.oidc_provider}:sub" = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
+            "${local.oidc_provider}:aud" = "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "irsa_attach" {
+  role       = aws_iam_role.irsa_role.name
+  policy_arn = aws_iam_policy.irsa_s3_policy.arn
+}
+
+
+
 #### SSM Role for each ec2 standardize and reuse it across all resources
 
 resource "aws_iam_role" "ssm_role" {
