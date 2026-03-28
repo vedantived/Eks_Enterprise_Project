@@ -2,42 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-    name: eks-enterprise
-    spec:
-     replicas: 2
-     selector:
-      matchLabels:
-       app: eks-enterprise
-     template     
-      metadata:
-       labels:
-        app: eks-enterprise
-      spec:
-           imagePullSecrets:
-            - name: ecr-secret
-      containers:
-       - name: eks-enterprise
-         image: 584673484425.dkr.ecr.ap-south-1.amazonaws.com/eks-zero-trust-app:latest
-         imagePullPolicy: Always
-         ports:
-             - containerPort: 3000
-
-         readinessProbe:
-           httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 10
-
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 20      
-=======
-
-metadata:
   name: zero-trust-app
 
 spec:

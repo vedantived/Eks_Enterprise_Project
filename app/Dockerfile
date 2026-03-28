@@ -2,6 +2,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install AWS CLI     ## Containers must include required tools  ## Containers must include required tools
+RUN apk add --no-cache aws-cli
 COPY package*.json ./
 
 RUN npm install --production

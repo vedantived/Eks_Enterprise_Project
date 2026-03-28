@@ -72,23 +72,35 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 
 data "aws_eks_cluster" "this" {
   name = module.eks.cluster_name
+  depends_on = [module.eks]  ### First create EKS cluster → THEN run this block
+
 }
 
 data "aws_eks_cluster_auth" "this" {                  ##Authentication Token - Connecting Terraform to Kubernetes cluster
   name = module.eks.cluster_name
+  depends_on = [module.eks]    #### First create EKS cluster → THEN run this block
+
 }
 
 data "tls_certificate" "eks" {                                                   ##Fetch TLS Certificate of OIDC URL
   url = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
 }
 
-resource "aws_iam_openid_connect_provider" "eks_oidc" {                                   ##Create OIDC Provider in IAM
+resource "aws_iam_openid_connect_provider" "eks_oidc" {
   url             = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+
+  # lifecycle {
+  #   prevent_destroy = true       ### Prevents accidental deletion
+  # }
 }
 
 ####### Create IAM Policy (creae s3 bucket) - IAM policy created with permission 
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
 
 resource "aws_s3_bucket" "irsa_bucket" {
   bucket = "my-irsa-demo-bucket-${random_id.suffix.hex}"
@@ -123,9 +135,17 @@ resource "aws_iam_policy" "irsa_s3_policy" {
       }
     ]
   })
-}}
+}
 
-#####Create IAM Role (Trust with OIDC + ServiceAccount)
+#####Create IAM Role for  irsa role  (Trust with OIDC + ServiceAccount)
+
+locals {
+  oidc_provider = replace(
+    data.aws_eks_cluster.this.identity[0].oidc[0].issuer, ####  It takes the OIDC URL from EKS and removes https:// Coz iam policy using aws ploicy format 
+    "https://",
+    ""
+  )
+}
 
 resource "aws_iam_role" "irsa_role" {
   name = "irsa-role"
