@@ -271,3 +271,23 @@ resource "aws_eks_node_group" "this" {
     Environment = "dev"
   }
 }
+
+##### Phase 5 Cloud logs and observability.....  
+
+module "cloudwatch_logs" {
+  source = "../../modules/cloudwatch-logs"
+}
+
+module "irsa_fluentbit" {
+  source = "../../modules/irsa-fluentbit"
+
+  oidc_provider_url   = module.eks.cluster_oidc_issuer_url
+  namespace           = "logging"
+  service_account_name = "fluent-bit"
+}
+
+# module "cloudwatch_logs" {
+#   source = "../../modules/cloudwatch-logs"
+
+#   retention_in_days = 14
+# }   ## if we want to override the file we can use this code..... 
