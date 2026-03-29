@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: logging
+data:
+  fluent-bit.conf: |
+    [SERVICE]                            
+        Flush        1                       
+        Log_Level    info
+
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        Parser            docker
+        Tag               kube.*
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+
+    [OUTPUT]
+        Name             cloudwatch_logs
+        Match            *
+        region           ap-south-1
+        log_group_name   /eks/fluentbit-logs
+        log_stream_prefix from-fluentbit-
+        auto_create_group true
+
+
+##[INPUT] from where logs comming          Path  /var/log/containers/*.log  Kubernates stored the data in this location 
+
+  
+##  Where to send logs  [OUTPUT]
+
+    # Pod generates logs
+    #    ↓
+    # Stored in /var/log/containers/
+    #    ↓
+    # Fluent Bit (INPUT → tail)
+    #    ↓
+    # Parsed (docker parser)
+    #    ↓
+    # Buffered (memory limit)
+    #    ↓
+    # Sent (OUTPUT → CloudWatch)
+    #    ↓
+    # Stored in log group

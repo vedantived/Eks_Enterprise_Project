@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logging
+
+
+##Creates a separate environment inside Kubernetes
+##Everything (pods, serviceaccounts) runs inside logging
