@@ -8,7 +8,7 @@ data:
     global:
       scrape_interval: 15s    ##Collect metrics every 15 sec
 
-    scrape_configs:
+    scrape_configs:                     ##The ConfigMap contains the Prometheus configuration for scraping metrics from nodes and pods.
 
       # 🔹 Node Metrics
       - job_name: 'eks-zero-trust-nodes'
