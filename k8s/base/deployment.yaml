@@ -30,12 +30,12 @@ spec:
             httpGet:
               path: /                     ##### /health Removed from code... to avoid error you have added previous project path 
               port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 10
+            periodSeconds: 5
 
           livenessProbe:
             httpGet:
               path: /
               port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 20
+            initialDelaySeconds: 5
+            periodSeconds: 5

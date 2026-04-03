@@ -3,10 +3,11 @@ kind: ConfigMap
 metadata:
   name: fluent-bit-config
   namespace: logging
+
 data:
   fluent-bit.conf: |
-    [SERVICE]                            
-        Flush        1                       
+    [SERVICE]
+        Flush        1
         Log_Level    info
 
     [INPUT]
@@ -16,6 +17,13 @@ data:
         Tag               kube.*
         Mem_Buf_Limit     5MB
         Skip_Long_Lines   On
+
+    [FILTER]
+        Name kubernetes
+        Match kube.*
+        Merge_Log On
+        Keep_Log Off
+
 
     [OUTPUT]
         Name             cloudwatch_logs
@@ -44,3 +52,18 @@ data:
     # Sent (OUTPUT → CloudWatch)
     #    ↓
     # Stored in log group
+
+
+#### Final Flow of the output 
+
+# Pod logs
+#    ↓
+# /var/log/containers
+#    ↓
+# Fluent Bit INPUT
+#    ↓
+# Kubernetes FILTER (add metadata)
+#    ↓
+# Grep FILTER (keep only ERROR/WARN)
+#    ↓
+# CloudWatch

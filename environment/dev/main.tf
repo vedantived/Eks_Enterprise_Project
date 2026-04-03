@@ -86,15 +86,15 @@ data "tls_certificate" "eks" {                                                  
   url = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
 }
 
-resource "aws_iam_openid_connect_provider" "eks_oidc" {
-  url             = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+# resource "aws_iam_openid_connect_provider" "eks_oidc" {
+#   url             = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
+#   client_id_list  = ["sts.amazonaws.com"]
+#   thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
 
   # lifecycle {
   #   prevent_destroy = true       ### Prevents accidental deletion
   # }
-}
+#}
 
 ####### Create IAM Policy (creae s3 bucket) - IAM policy created with permission 
 
@@ -156,7 +156,7 @@ resource "aws_iam_role" "irsa_role" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = aws_iam_openid_connect_provider.eks_oidc.arn
+          Federated = module.eks.oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -291,3 +291,25 @@ module "irsa_fluentbit" {
 
 #   retention_in_days = 14
 # }   ## if we want to override the file we can use this code..... 
+
+
+### SNS ALERTING
+module "alerting" {
+  source = "../../modules/alerting"
+
+  email          = "nayanvayada7@gmail.com"
+  log_group_name = "/eks/fluentbit-logs"
+}
+
+### IRSA ALB Controller 
+
+module "irsa_alb_controller" {
+  source = "../../modules/irsa-alb-controller"
+
+  namespace            = "kube-system"
+  service_account_name = "aws-load-balancer-controller"
+  oidc_provider_arn    = module.eks.oidc_provider_arn
+  oidc_provider_url    = module.eks.oidc_provider_url
+  depends_on = [module.cloudwatch_logs]   
+
+}

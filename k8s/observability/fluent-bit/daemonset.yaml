@@ -7,34 +7,53 @@ spec:
   selector:
     matchLabels:
       app: fluent-bit
+
   template:
     metadata:
       labels:
         app: fluent-bit
+
     spec:
       serviceAccountName: fluent-bit
+
+      tolerations:
+        - operator: Exists
+
       containers:
         - name: fluent-bit
-          image: public.ecr.aws/aws-observability/aws-for-fluent-bit:latest  ## official aws Official AWS Fluent Bit image from: aws EKS logging CloudWatch integration
+          image: public.ecr.aws/aws-observability/aws-for-fluent-bit:latest
+
           volumeMounts:
             - name: varlog
               mountPath: /var/log
+
             - name: varlibdockercontainers
               mountPath: /var/lib/docker/containers
               readOnly: true
+
             - name: config
               mountPath: /fluent-bit/etc/
+
+            - name: storage
+              mountPath: /var/log/flb-storage
 
       volumes:
         - name: varlog
           hostPath:
-            path: /var/log      
+            path: /var/log
+
         - name: varlibdockercontainers
           hostPath:
             path: /var/lib/docker/containers
+
         - name: config
           configMap:
             name: fluent-bit-config
+
+        - name: storage
+          hostPath:
+            path: /var/log/flb-storage
+            type: DirectoryOrCreate
 
 #Runs Fluent Bit on every node
 ##Collects logs from all pods
@@ -52,10 +71,26 @@ spec:
 #    Reads logs from mounted path
 
 
-# App logs generated
+# App generates logs
 #       ↓
-# Stored in /var/lib/docker/containers (real)
+# Stored in:
+#   /var/lib/docker/containers (real)
 #       ↓
-# Linked to /var/log/containers (symlink)
+# Linked to:
+#   /var/log/containers (symlink)
 #       ↓
-# Fluent Bit reads from /var/log/containers
+# Mounted into Fluent Bit container
+#       ↓
+# Fluent Bit reads logs
+#       ↓
+# Sends to :contentReference[oaicite:0]{index=0}
+
+
+## Volumes addedd 
+##Fluent Bit runs inside a container, but logs exist on the node — so we mount node paths into the container to access logs
+
+
+# Fluent Bit = courier 
+# Logs = package
+# CloudWatch = warehouse
+# Fluent Bit “sends” logs to CloudWatch

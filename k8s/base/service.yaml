@@ -17,7 +17,7 @@ metadata:
   name: zero-trust-service
 
 spec:
-  type: LoadBalancer    ### Removed Node port Added LB AWS creates LB automatically Public access
+  type: ClusterIP    ### Removed Node port Added LB AWS creates LB automatically Public access
 
   selector:
     app: zero-trust-app
