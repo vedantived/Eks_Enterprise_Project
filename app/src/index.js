@@ -23,5 +23,5 @@ console.log(JSON.stringify({
 console.log(JSON.stringify({
   level: "error",
   message: "SNS TEST ERROR",
-  service: "roadbee-app"
+  service: "EKS-Project"
 }));
