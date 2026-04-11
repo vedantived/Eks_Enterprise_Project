@@ -43,9 +43,7 @@ variable "common_tags" {
 }
 
 variable "namespace" {
-  description = "Kubernetes namespace"
-  type        = string
-  default     = "default"
+  default = "security"   
 }
 
 variable "service_account_name" {

@@ -23,5 +23,4 @@ common_tags = {
   Environment = "dev"
   Project     = "EKS-Zero-Trust"
 }
-namespace            = "default"
 service_account_name = "irsa-sa"

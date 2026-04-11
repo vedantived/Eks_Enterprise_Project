@@ -3,7 +3,7 @@ kind: HorizontalPodAutoscaler
 
 metadata:
   name: node-app-hpa
-  namespace: default
+  namespace: security
 
 spec:
   scaleTargetRef:

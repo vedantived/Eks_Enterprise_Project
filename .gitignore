@@ -21,3 +21,9 @@ crash.log
 
 # Node (just in case)
 node_modules/
+
+eksctl.tar.gz
+
+iam_policy.json
+
+terraform.tfstate

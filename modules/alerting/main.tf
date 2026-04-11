@@ -8,10 +8,15 @@ resource "aws_sns_topic_subscription" "email" {
   endpoint  = var.email
 }
 
+resource "aws_cloudwatch_log_group" "eks_logs" {
+  name              = "/eks/fluentbit-logs"
+  retention_in_days = 7
+}
+
 resource "aws_cloudwatch_log_metric_filter" "error_filter" {
   name           = "error-count"
   log_group_name = var.log_group_name
-  pattern = "FINAL ALERT TEST"  
+  pattern =  "FINAL ALERT TEST"
 
   metric_transformation {
     name      = "ErrorCount"

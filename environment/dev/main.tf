@@ -141,7 +141,7 @@ resource "aws_iam_policy" "irsa_s3_policy" {
 
 locals {
   oidc_provider = replace(
-    data.aws_eks_cluster.this.identity[0].oidc[0].issuer, ####  It takes the OIDC URL from EKS and removes https:// Coz iam policy using aws ploicy format 
+    module.eks.cluster_oidc_issuer_url,
     "https://",
     ""
   )
@@ -155,14 +155,16 @@ resource "aws_iam_role" "irsa_role" {
     Statement = [
       {
         Effect = "Allow"
+
         Principal = {
-          Federated = module.eks.oidc_provider_arn
+          Federated = "arn:aws:iam::584673484425:oidc-provider/${local.oidc_provider}"
         }
+
         Action = "sts:AssumeRoleWithWebIdentity"
+
         Condition = {
-          StringEquals = {
-            "${local.oidc_provider}:sub" = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
-            "${local.oidc_provider}:aud" = "sts.amazonaws.com"
+            StringLike = {
+            "${local.oidc_provider}:sub" = "system:serviceaccount:security:*"
           }
         }
       }
@@ -175,6 +177,30 @@ resource "aws_iam_role_policy_attachment" "irsa_attach" {
   policy_arn = aws_iam_policy.irsa_s3_policy.arn
 }
 
+#### irsa_secrets_policy 
+resource "aws_iam_policy" "irsa_secrets_policy" {
+  name = "irsa-secrets-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = "arn:aws:secretsmanager:ap-south-1:584673484425:secret:prod/db-password-rSecKY"
+      }
+    ]
+  })
+}
+
+## Attach Policy to Role
+
+resource "aws_iam_role_policy_attachment" "irsa_secrets_attach" {
+  role       = aws_iam_role.irsa_role.name
+  policy_arn = aws_iam_policy.irsa_secrets_policy.arn
+}
 
 
 #### SSM Role for each ec2 standardize and reuse it across all resources
@@ -297,7 +323,7 @@ module "irsa_fluentbit" {
 module "alerting" {
   source = "../../modules/alerting"
 
-  email          = "nayanvayada7@gmail.com"
+  email          = "vayadanayan21@gmail.com"
   log_group_name = "/eks/fluentbit-logs"
 }
 

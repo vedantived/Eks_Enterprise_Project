@@ -3,6 +3,7 @@ kind: Deployment
 
 metadata:
   name: zero-trust-app
+  namespace: security
 
 spec:
   replicas: 2
@@ -15,9 +16,13 @@ spec:
     metadata:
       labels:
         app: zero-trust-app
-        # Removed imagePullSecrets coz our node IAM role already has: our node IAM role already has:
+
     spec:
-      serviceAccountName: irsa-sa                  ##service account
+      serviceAccountName: irsa-sa
+
+      securityContext:
+        fsGroup: 2000   # ✅ POD LEVEL
+
       containers:
         - name: zero-trust-container
           image: 584673484425.dkr.ecr.ap-south-1.amazonaws.com/eks-zero-trust-app:latest
@@ -26,9 +31,20 @@ spec:
           ports:
             - containerPort: 3000
 
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true   # ✅ IMPORTANT
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+
           readinessProbe:
             httpGet:
-              path: /                     ##### /health Removed from code... to avoid error you have added previous project path 
+              path: /
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 5
