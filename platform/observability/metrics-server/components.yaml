@@ -1,4 +1,3 @@
-##Metrics Server (components.yaml) - Collect CPU/Memory from Kubelet → expose via metrics.k8s.io
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -19,7 +18,7 @@ rules:
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding         ##Connects role + service account
+kind: ClusterRoleBinding
 metadata:
   name: metrics-server
 roleRef:
@@ -30,6 +29,34 @@ subjects:
   - kind: ServiceAccount
     name: metrics-server
     namespace: kube-system
+
+# 🔐 FIX: Allow reading authentication configmap
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: metrics-server-auth-reader
+  namespace: kube-system
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["extension-apiserver-authentication"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: metrics-server-auth-reader
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: metrics-server-auth-reader
+subjects:
+  - kind: ServiceAccount
+    name: metrics-server
+    namespace: kube-system
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -39,10 +66,10 @@ metadata:
   labels:
     k8s-app: metrics-server
 spec:
+  replicas: 1
   selector:
     matchLabels:
       k8s-app: metrics-server
-  replicas: 1
   template:
     metadata:
       labels:
@@ -50,18 +77,19 @@ spec:
     spec:
       serviceAccountName: metrics-server
       containers:
-      - name: metrics-server
-        image: registry.k8s.io/metrics-server/metrics-server:v0.7.2         ##Official Metrics Server image
-        args:
-          - --cert-dir=/tmp
-          - --secure-port=10250
-          - --kubelet-insecure-tls
-          - --kubelet-preferred-address-types=InternalIP,Hostname
-          - --kubelet-use-node-status-port
-          - --metric-resolution=15s             ##Collect metrics every 15 sec
-        ports:
-        - containerPort: 10250       ##Metrics Server listens here
-          name: https
+        - name: metrics-server
+          image: registry.k8s.io/metrics-server/metrics-server:v0.7.2
+          args:
+            - --cert-dir=/tmp
+            - --secure-port=10250
+            - --kubelet-insecure-tls
+            - --kubelet-preferred-address-types=InternalIP
+            - --kubelet-use-node-status-port
+            - --kubelet-request-timeout=10s
+            - --metric-resolution=15s
+          ports:
+            - containerPort: 10250
+              name: https
 ---
 apiVersion: v1
 kind: Service
