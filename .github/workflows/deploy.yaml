@@ -5,62 +5,54 @@ on:
     branches:
       - dev
 
-concurrency:
-  group: deploy-main
-  cancel-in-progress: true  ##If multiple pushes happen quickly, GitHub cancels the old running pipeline and keeps only the newest one
-
 env:
   AWS_REGION: ap-south-1
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}   ##Comes from GitHub Secret
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   ECR_REPOSITORY: eks-zero-trust-app
-  IMAGE_TAG: ${{ github.sha }}      ##Uses current Git commit SHA as image tag
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
-  build-and-push:
+  deploy:
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write   ##Needed for OIDC login to AWS
-      contents: write  ##Needed because the workflow commits changes back to GitHub
+      id-token: write
+      contents: read
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4  ##Uses OIDC authentication-Assumes the IAM role-Gives temporary AWS access-Avoids using permanent access keys
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-role  ##This role is the one created in Terraform
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-role
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Image
+      - name: Build & Push Image
         run: |
-            docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./app
-            docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
-            docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
-            
-      - name: Tag Image
-        run: |
-          set -e
-          docker tag $ECR_REPOSITORY:$IMAGE_TAG \
-            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
-
-      - name: Push Image
-        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./app
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
 
-      - name: Update Deployment Image
+      - name: Update kubeconfig
         run: |
-          sed -i "s|eks-zero-trust-app:.*|eks-zero-trust-app:$IMAGE_TAG|g" applications/zero-trust-app/base/deployment.yaml
-          
-      - name: Commit Changes
+          aws eks update-kubeconfig \
+            --region $AWS_REGION \
+            --name eks-zero-trust-cluster
+
+      - name: Apply K8s manifests
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add applications/zero-trust-app/base/deployment.yaml
-          git diff --cached --quiet || git commit -m "Update image tag to $IMAGE_TAG [skip ci]"  ###Creates a commit with the new Docker image tag.[skip ci] is important because it prevents this commit from triggering the GitHub Actions pipeline again.Without it, you could get an infinite loop
-          git push
+          kubectl apply -k applications/zero-trust-app/base
+
+      - name: Update Image
+        run: |
+          kubectl set image deployment/zero-trust-app \
+            zero-trust-container=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG \
+            -n security
+
+      - name: Verify rollout
+        run: |
+          kubectl rollout status deployment/zero-trust-app -n security
