@@ -11,6 +11,28 @@ resource "aws_iam_openid_connect_provider" "github" {
   ]
 }
 
+resource "aws_iam_policy" "eks_access_policy" {
+  name = "github-eks-access"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "eks:DescribeCluster"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_eks" {
+  role       = aws_iam_role.github_actions_role.name
+  policy_arn = aws_iam_policy.eks_access_policy.arn
+}
+
 resource "aws_iam_role" "github_actions_role" {
   name = "github-actions-role"
 
