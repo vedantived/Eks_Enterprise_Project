@@ -41,7 +41,7 @@ jobs:
         run: |
           aws eks update-kubeconfig \
             --region $AWS_REGION \
-            --name eks-zero-trust-cluster
+            --name eks-zero-trust
 
       - name: Apply K8s manifests
         run: |
