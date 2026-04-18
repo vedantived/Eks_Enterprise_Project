@@ -38,7 +38,7 @@ jobs:
 
       - name: Build Image
         run: |
-            docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./applications/zero-trust-app
+            docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./app
             docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
             docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
             
