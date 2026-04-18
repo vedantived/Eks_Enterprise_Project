@@ -3,7 +3,7 @@ name: Zero Trust Pipeline
 on:
   push:
     branches:
-      - main
+      - dev
 
 concurrency:
   group: deploy-main
@@ -38,9 +38,10 @@ jobs:
 
       - name: Build Image
         run: |
-          set -e
-          docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./applications/zero-trust-app
-
+            docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./applications/zero-trust-app
+            docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+            docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+            
       - name: Tag Image
         run: |
           set -e
@@ -49,18 +50,17 @@ jobs:
 
       - name: Push Image
         run: |
-          set -e
-          docker push \
-            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
 
       - name: Update Deployment Image
         run: |
-          sed -i "s|IMAGE_TAG|$IMAGE_TAG|g" base/deployment.yaml
-
+          sed -i "s|eks-zero-trust-app:.*|eks-zero-trust-app:$IMAGE_TAG|g" applications/zero-trust-app/base/deployment.yaml
+          
       - name: Commit Changes
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add base/deployment.yaml
+          git add applications/zero-trust-app/base/deployment.yaml
           git diff --cached --quiet || git commit -m "Update image tag to $IMAGE_TAG [skip ci]"  ###Creates a commit with the new Docker image tag.[skip ci] is important because it prevents this commit from triggering the GitHub Actions pipeline again.Without it, you could get an infinite loop
           git push
