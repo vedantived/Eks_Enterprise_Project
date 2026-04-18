@@ -1,0 +1,66 @@
+name: Zero Trust Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true  ##If multiple pushes happen quickly, GitHub cancels the old running pipeline and keeps only the newest one
+
+env:
+  AWS_REGION: ap-south-1
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}   ##Comes from GitHub Secret
+  ECR_REPOSITORY: eks-zero-trust-app
+  IMAGE_TAG: ${{ github.sha }}      ##Uses current Git commit SHA as image tag
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write   ##Needed for OIDC login to AWS
+      contents: write  ##Needed because the workflow commits changes back to GitHub
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4  ##Uses OIDC authentication-Assumes the IAM role-Gives temporary AWS access-Avoids using permanent access keys
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-role  ##This role is the one created in Terraform
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Image
+        run: |
+          set -e
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./applications/zero-trust-app
+
+      - name: Tag Image
+        run: |
+          set -e
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Push Image
+        run: |
+          set -e
+          docker push \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Update Deployment Image
+        run: |
+          sed -i "s|IMAGE_TAG|$IMAGE_TAG|g" base/deployment.yaml
+
+      - name: Commit Changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add base/deployment.yaml
+          git diff --cached --quiet || git commit -m "Update image tag to $IMAGE_TAG [skip ci]"  ###Creates a commit with the new Docker image tag.[skip ci] is important because it prevents this commit from triggering the GitHub Actions pipeline again.Without it, you could get an infinite loop
+          git push
