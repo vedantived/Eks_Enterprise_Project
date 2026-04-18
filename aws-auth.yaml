@@ -1,0 +1,13 @@
+apiVersion: v1
+data:
+  mapRoles: "- rolearn: arn:aws:iam::584673484425:role/eks-node-role\n  groups:\n
+    \ - system:bootstrappers\n  - system:nodes\n  username: system:node:{{EC2PrivateDNSName}}\n
+    \   \n- rolearn: arn:aws:iam::584673484425:role/github-actions-role\n  username:
+    github-actions\n  groups:\n   - system:masters\n"
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2026-04-18T17:30:08Z"
+  name: aws-auth
+  namespace: kube-system
+  resourceVersion: "40583"
+  uid: fe2e9c75-e136-48d6-9833-ecb8179713a0

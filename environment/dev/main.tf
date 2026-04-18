@@ -34,9 +34,13 @@ module "eks" {
     module.vpc.public_subnet_ids
   )
 
-    allowed_cidrs = [
-    "${chomp(data.http.my_ip.response_body)}/32"     ### Thhis Line fecth the our laptop ip dyanamically  chomp() cleans API output before using it  
-  ]
+    #allowed_cidrs = [
+   # "${chomp(data.http.my_ip.response_body)}/32"     ### Thhis Line fecth the our laptop ip dyanamically  chomp() cleans API output before using it  
+  #]
+
+  allowed_cidrs = [
+  "0.0.0.0/0"
+]
 
   cluster_role_policy_attachment = aws_iam_role_policy_attachment.eks_cluster_policy
 
