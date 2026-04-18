@@ -1,18 +1,15 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
-
 metadata:
   name: zero-trust-ingress
   namespace: security
-
   annotations:
-    kubernetes.io/ingress.class: alb   # 🔥 IMPORTANT
+    kubernetes.io/ingress.class: alb   # 🔥 CRITICAL FIX
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
 spec:
   ingressClassName: alb
-
   rules:
     - http:
         paths:
@@ -20,6 +17,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: zero-trust-service   # ✅ MUST MATCH SERVICE
+                name: zero-trust-service
                 port:
                   number: 80

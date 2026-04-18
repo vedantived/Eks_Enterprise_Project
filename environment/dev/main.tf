@@ -339,3 +339,9 @@ module "irsa_alb_controller" {
   depends_on = [module.cloudwatch_logs]   
 
 }
+
+module "waf" {
+  source  = "../../modules/waf"
+
+  alb_arn = "arn:aws:elasticloadbalancing:ap-south-1:584673484425:loadbalancer/app/k8s-security-zerotrus-f20aa0c22e/92da064c82c6b811"
+}
