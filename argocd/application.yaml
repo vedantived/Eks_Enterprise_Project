@@ -11,16 +11,24 @@ spec:
   source:
     repoURL: https://github.com/vedantived/Eks_Enterprise_Project.git
     targetRevision: main
-    path: applications/zero-trust-app/base
+    path: applications/zero-trust-app/base   
 
   destination:
-    server: https://kubernetes.default.svc
+    server: https://kubernetes.default.svc  #Deploys directly into EKS cluster
     namespace: security
 
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      prune: true       #removes deleted resources from Git
+      selfHeal: true   #fixes manual changes in cluster
 
     syncOptions:
       - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true   #ArgoCD applies ONLY changed resources-Faster sync-Less API load on Kubernetes API server
+
+    retry:       #Handles temporary failures
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
