@@ -10,7 +10,7 @@ spec:
 
   source:
     repoURL: https://github.com/vedantived/Eks_Enterprise_Project.git
-    targetRevision: main
+    targetRevision: dev
     path: applications/zero-trust-app/base   
 
   destination:
