@@ -37,7 +37,7 @@ jobs:
           docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./app
 
       - name: Scan image with Trivy (FAIL on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@0.20.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: $ECR_REPOSITORY:${{ env.IMAGE_TAG }}
           format: table
