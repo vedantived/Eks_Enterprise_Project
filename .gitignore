@@ -8,6 +8,7 @@
 *.tfstate
 *.tfstate.*
 crash.log
+.cache/
 
 # Sensitive files
 *.tfvars

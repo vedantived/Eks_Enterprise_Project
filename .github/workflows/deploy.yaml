@@ -57,10 +57,11 @@ jobs:
         run: |
           sed -i "s|image:.*|image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG|g" applications/zero-trust-app/base/deployment.yaml
 
-      - name: Commit & push changes
+      - name: Commit and Push Changes
         run: |
+          rm -rf .cache
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git add .
-          git commit -m "Update image to $IMAGE_TAG"
+          git add applications/zero-trust-app/base/deployment.yaml
+          git commit -m "Update image to $IMAGE_TAG" || echo "No changes to commit"
           git push
