@@ -12,12 +12,12 @@ env:
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     permissions:
       id-token: write
-      contents: read
+      contents: write   # IMPORTANT (needed to push code)
 
     steps:
       - uses: actions/checkout@v4
@@ -37,22 +37,14 @@ jobs:
           docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Update kubeconfig
+      - name: Update image tag in K8s manifest
         run: |
-          aws eks update-kubeconfig \
-            --region $AWS_REGION \
-            --name eks-zero-trust
+          sed -i "s|image: .*|image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG|g" applications/zero-trust-app/base/deployment.yaml
 
-      - name: Apply K8s manifests
+      - name: Commit and Push Changes
         run: |
-          kubectl apply -k applications/zero-trust-app/base
-
-      - name: Update Image
-        run: |
-          kubectl set image deployment/zero-trust-app \
-            zero-trust-container=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG \
-            -n security
-
-      - name: Verify rollout
-        run: |
-          kubectl rollout status deployment/zero-trust-app -n security
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Update image to $IMAGE_TAG"
+          git push

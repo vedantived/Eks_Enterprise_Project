@@ -280,8 +280,8 @@ resource "aws_eks_node_group" "this" {
   subnet_ids = module.vpc.private_subnet_ids
 
   scaling_config {
-    desired_size = 1
-    max_size     = 2
+    desired_size = 2
+    max_size     = 3
     min_size     = 1
   }
 
@@ -344,8 +344,8 @@ module "irsa_alb_controller" {
 
 }
 
-module "waf" {
-  source  = "../../modules/waf"
+# module "waf" {
+#   source  = "../../modules/waf"
 
-  alb_arn = "arn:aws:elasticloadbalancing:ap-south-1:584673484425:loadbalancer/app/k8s-security-zerotrus-f20aa0c22e/92da064c82c6b811"
-}
+#   alb_arn = "arn:aws:elasticloadbalancing:ap-south-1:584673484425:loadbalancer/app/k8s-security-zerotrus-f20aa0c22e/92da064c82c6b811"
+# }
