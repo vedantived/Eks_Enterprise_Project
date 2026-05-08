@@ -12,13 +12,13 @@ resource "aws_wafv2_web_acl" "this" {
 
     statement {
       managed_rule_group_statement {
-        name        = "AWSManagedRulesSQLiRuleSet"   # ✅ CORRECT NAME
+        name        = "AWSManagedRulesSQLiRuleSet"   #  CORRECT NAME
         vendor_name = "AWS"
       }
     }
 
     override_action {
-      none {}   # ✅ keep this for managed rules
+      none {}   #  keep this for managed rules
     }
 
     visibility_config {

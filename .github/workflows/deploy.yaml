@@ -9,16 +9,19 @@ env:
   AWS_REGION: ap-south-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   ECR_REPOSITORY: eks-zero-trust-app
+# Unique tag = commit SHA (VERY IMPORTANT)
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
-  build-and-push:
+  build-and-push: # GitHub runner (temporary VM)
     runs-on: ubuntu-latest
 
+# Step 1: Checkout your GitHub code into runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+#  Step 2: Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -26,16 +29,19 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+# Step 3: Login to AWS ECR (Docker registry)
       - name: Login to ECR
         run: |
           aws ecr get-login-password --region $AWS_REGION | \
           docker login --username AWS --password-stdin \
           $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
+# Step 4: Build Docker image locally inside runner
       - name: Build Docker image
         run: |
           docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./app
 
+# Step 5: Scan image using Trivy (security scan)
       - name: Scan image with Trivy (FAIL on HIGH/CRITICAL)
         uses: aquasecurity/trivy-action@master
         with:
@@ -43,25 +49,41 @@ jobs:
           exit-code: 0
           severity: CRITICAL,HIGH
 
+# Step 6: Tag image for ECR (convert local tag → AWS ECR format)
       - name: Tag image
         run: |
           docker tag $ECR_REPOSITORY:$IMAGE_TAG \
           $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
 
+#  Step 7: Push image to AWS ECR
       - name: Push image to ECR
         run: |
           docker push \
           $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
 
+#  Step 8: Update Kubernetes deployment file with new image
       - name: Update image in K8s manifest
         run: |
           sed -i "s|image:.*|image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG|g" applications/zero-trust-app/base/deployment.yaml
+      # Replace the old img with new img 
 
+#  Commit updated file back to GitHub (GitOps trigger)
       - name: Commit and Push Changes
         run: |
-          rm -rf .cache
+          rm -rf .cache       
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add applications/zero-trust-app/base/deployment.yaml
           git commit -m "Update image to $IMAGE_TAG" || echo "No changes to commit"
           git push
+
+# The Complete Flow of the Above Pipeline.........
+# 1. You push code
+# 2. Pipeline runs
+# 3. Image built
+# 4. Image scanned (Trivy)
+# 5. Image pushed to ECR
+# 6. deployment.yaml updated
+# 7. Git updated
+# 8. ArgoCD detects change
+# 9. ArgoCD deploys to EKS

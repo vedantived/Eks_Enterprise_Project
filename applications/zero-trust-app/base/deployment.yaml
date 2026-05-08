@@ -21,7 +21,7 @@ spec:
       serviceAccountName: irsa-sa
 
       securityContext:
-        fsGroup: 2000   # ✅ POD LEVEL
+        fsGroup: 2000   # POD LEVEL
 
       containers:
         - name: zero-trust-container
