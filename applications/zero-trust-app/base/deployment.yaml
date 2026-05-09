@@ -25,7 +25,7 @@ spec:
 
       containers:
         - name: zero-trust-container
-          image: 584673484425.dkr.ecr.ap-south-1.amazonaws.com/eks-zero-trust-app:97513d292c0762924a69f5a3dd150858d572e048
+          image: 584673484425.dkr.ecr.ap-south-1.amazonaws.com/eks-zero-trust-app:a07c9156339adf18ad48a5e06dd534dcc38c5fdd
           imagePullPolicy: Always
 
           ports:
