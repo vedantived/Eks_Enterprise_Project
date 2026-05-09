@@ -5,6 +5,9 @@ on:
     branches:
       - dev
 
+permissions:
+  contents: write
+
 env:
   AWS_REGION: ap-south-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -28,6 +31,10 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+
+          
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
 
 # Step 3: Login to AWS ECR (Docker registry)
       - name: Login to ECR
