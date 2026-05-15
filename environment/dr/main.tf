@@ -25,7 +25,7 @@ data "http" "my_ip" {
 module "eks" {
   source = "../../modules/eks"
 
-  cluster_name = "eks-zero-trust"
+  cluster_name = "eks-zero-trust-dr"
 
   cluster_role_arn = aws_iam_role.eks_cluster_role.arn
 
@@ -288,7 +288,8 @@ resource "aws_eks_node_group" "this" {
     min_size     = 1
   }
 
-  instance_types = ["t3.micro"]
+  instance_types = ["t3.small"]
+
   capacity_type = "ON_DEMAND"
 
   depends_on = [

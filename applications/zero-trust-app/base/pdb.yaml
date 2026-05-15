@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+
+metadata:
+  name: zero-trust-pdb
+  namespace: security
+
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      app: zero-trust-app
