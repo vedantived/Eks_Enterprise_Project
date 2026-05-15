@@ -7,3 +7,4 @@ resources:
   - ingress.yaml
   - pdb.yaml
   - hpa.yaml
+  - network-policy.yaml
