@@ -1,0 +1,55 @@
+##This Kyverno policy is used to enforce Kubernetes security by ensuring containers do not run as the root user inside the cluster.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-nonroot
+spec:
+  validationFailureAction: Enforce
+  background: true
+
+  rules:
+    - name: validate-run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+
+      validate:
+        message: "Containers must run as non-root users."
+
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+
+            containers:
+              - securityContext:
+                  runAsNonRoot: true
+
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-nonroot-user
+spec:
+  validationFailureAction: Enforce
+  background: true
+
+  rules:
+    - name: validate-run-as-user
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+
+      validate:
+        message: "Containers must not run as root user (UID 0)."
+
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  runAsUser: ">0"    ##Linux root user UID = 0
+                                      ##>0 means container must run with non-root user IDs only.
