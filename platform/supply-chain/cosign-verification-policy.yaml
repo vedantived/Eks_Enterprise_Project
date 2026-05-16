@@ -1,0 +1,42 @@
+apiVersion: kyverno.io/v1          ##to ensure that only digitally signed container images are allowed inside the Kubernetes cluster.
+kind: ClusterPolicy
+metadata:
+  name: cosign-verification-policy
+spec:
+  validationFailureAction: Enforce      #3Enforce means deployment is blocked if image verification fails.
+  background: false          ##Only checks new deployments.
+  webhookTimeoutSeconds: 30
+  failurePolicy: Fail        #3If Kyverno cannot verify the image, deployment is rejected automatically.
+
+  rules:
+    - name: verify-signed-images
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+                - Job
+                - CronJob
+
+      verifyImages:
+        - imageReferences:
+            - "*.dkr.ecr.ap-south-1.amazonaws.com/*"      ##Checks images coming from Amazon ECR registry in AWS Mumbai region (ap-south-1).
+
+          mutateDigest: true
+          required: true
+          verifyDigest: true
+
+          attestors:
+            - count: 1
+              entries:
+                - keys:
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      REPLACE_WITH_YOUR_COSIGN_PUBLIC_KEY
+                      -----END PUBLIC KEY-----
+
+          annotations:
+            cosign.sigstore.dev/imageRef: "{{ image.reference }}"
