@@ -16,4 +16,4 @@ spec:
         karpenter.sh/discovery: zero-trust-eks
 
   tags:
-    Environment: production
+    Environment: dev ##production
