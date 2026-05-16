@@ -1,0 +1,69 @@
+##This Kyverno policy ensures that all Kubernetes containers have proper health checks configured before deployment.
+##These health checks help Kubernetes monitor application health and availability automatically.
+#If any probe is missing, Kubernetes deployment will be blocked automatically.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes
+spec:
+  validationFailureAction: Enforce
+  background: true
+
+  rules:
+    - name: validate-liveness-readiness-startup-probes
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+
+      validate:
+        message: "All containers must define livenessProbe, readinessProbe, and startupProbe."
+
+        pattern:
+          spec:
+            containers:
+              - livenessProbe:               ##Checks whether the application is alive.If failed repeatedly, Kubernetes restarts the container.
+                  "*": "*"
+
+                readinessProbe:              ##Checks whether application is ready to receive traffic.Prevents sending traffic to unhealthy containers.
+                  "*": "*"
+
+                startupProbe:                ##Used for slow-starting applications.Gives extra startup time before liveness checks begin.
+                  "*": "*"
+
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes-controller
+spec:
+  validationFailureAction: Enforce
+  background: true
+
+  rules:
+    - name: validate-controller-probes
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+
+      validate:
+        message: "Containers must include livenessProbe, readinessProbe, and startupProbe."
+
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - livenessProbe:
+                      "*": "*"
+
+                    readinessProbe:
+                      "*": "*"
+
+                    startupProbe:
+                      "*": "*"
