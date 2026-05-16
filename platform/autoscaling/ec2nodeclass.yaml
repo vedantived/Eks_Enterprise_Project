@@ -1,0 +1,19 @@
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: secure-nodeclass
+spec:
+  amiFamily: AL2
+
+  role: KarpenterNodeRole
+
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: zero-trust-eks
+
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: zero-trust-eks
+
+  tags:
+    Environment: production
