@@ -21,11 +21,11 @@ spec:
       serviceAccountName: irsa-sa
 
       securityContext:
-        fsGroup: 2000   # POD LEVEL
+        fsGroup: 2000
 
       containers:
         - name: zero-trust-container
-          image: 584673484425.dkr.ecr.ap-south-1.amazonaws.com/eks-zero-trust-app:a07c9156339adf18ad48a5e06dd534dcc38c5fdd
+          image: 464243369696.dkr.ecr.ap-south-1.amazonaws.com/eks-zero-trust-app:latest
           imagePullPolicy: Always
 
           ports:
@@ -35,21 +35,20 @@ spec:
             runAsNonRoot: true
             runAsUser: 1000
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true   # ✅ IMPORTANT
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
             seccompProfile:
               type: RuntimeDefault
 
-            resources:
-              requests:
-                cpu: "200m"
-                memory: "256Mi"
-
-              limits:
-                cpu: "500m"
-                memory: "512Mi"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
 
           readinessProbe:
             httpGet:
